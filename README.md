@@ -19,7 +19,7 @@ git init
 git add .
 
 # Commit changes
-git commit -m "feat: init photobooth cipa"
+git commit -m "feat: init photobooth aya"
 
 # Rename branch to main
 git branch -M main

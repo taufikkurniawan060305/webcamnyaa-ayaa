@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as htmlToImage from 'html-to-image';
-import { Download, RefreshCw, Layers, Palette, Sliders, Type, Sparkles } from 'lucide-react';
+import { Download, RefreshCw, Layers, Palette, Sliders, Type, Sparkles, Share2 } from 'lucide-react';
 
 const THEMES = [
   { 
@@ -207,6 +207,29 @@ export default function EditorScreen({ photos, onRetake }) {
     document.body.removeChild(link);
   };
 
+  const handleShare = async (url) => {
+    if (!url) return;
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const file = new File([blob], `aya-miniphotobox-${Date.now()}.png`, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Photostrip Aya 🌸',
+          text: 'Hasil foto dari Webcam Aya Studio 🌸',
+        });
+        return;
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.warn("Share failed:", e);
+      }
+    }
+    // Fallback if sharing is cancelled or not supported
+    triggerDownload(url);
+  };
+
   const handleDownload = async () => {
     if (!printRef.current || isExporting) return;
     setIsExporting(true);
@@ -218,18 +241,25 @@ export default function EditorScreen({ photos, onRetake }) {
       
       const images = printRef.current.querySelectorAll('img');
       const loadPromises = Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve();
+        if (img.complete && img.naturalWidth > 0) {
+          return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+        }
         return new Promise(resolve => {
-          img.onload = resolve;
+          img.onload = () => {
+            if (img.decode) img.decode().catch(() => {}).then(resolve);
+            else resolve();
+          };
           img.onerror = resolve;
         });
       });
       await Promise.all(loadPromises);
       
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       const renderOptions = {
-        pixelRatio: 3,
+        pixelRatio: isMobile ? 2 : 3, // Safe 2x for mobile canvas memory limits, 3x on desktop
         skipFonts: true, // Prevents CORS SecurityError on fonts.googleapis.com
         style: {
           transform: 'none',
@@ -267,11 +297,30 @@ export default function EditorScreen({ photos, onRetake }) {
       blobUrlRef.current = blobUrl;
       setExportedImage(blobUrl);
       
-      // Automatically trigger browser download with proper .png extension
+      // On mobile, attempt Web Share API first so users can directly "Save Image" to their phone Gallery / Camera Roll
+      if (isMobile && navigator.share && navigator.canShare) {
+        try {
+          const file = new File([blob], `aya-miniphotobox-${Date.now()}.png`, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Photostrip Aya 🌸',
+              text: 'Hasil foto dari Webcam Aya Studio 🌸',
+            });
+            return;
+          }
+        } catch (shareErr) {
+          if (shareErr.name !== 'AbortError') {
+            console.warn("Mobile share not completed:", shareErr);
+          }
+        }
+      }
+
+      // Automatically trigger browser download
       triggerDownload(blobUrl);
     } catch (err) {
       console.error("Failed to generate photostrip image:", err);
-      alert("Pemberitahuan: Terjadi kendala saat merender gambar PNG. Silakan coba kembali.");
+      alert("Pemberitahuan: Terjadi kendala saat merender gambar PNG. Silakan coba kembali atau tekan lama pada foto untuk menyimpan.");
     } finally {
       setIsExporting(false);
     }
@@ -852,31 +901,40 @@ export default function EditorScreen({ photos, onRetake }) {
             </div>
             
             <p className="text-xs text-pink-900/70 text-center max-w-xs leading-relaxed">
-              File <strong>.png</strong> telah diunduh otomatis ke folder Download. Jika belum muncul, klik tombol <strong>"Unduh PNG Lagi"</strong> di bawah.
+              Foto format <strong>.png</strong> resolusi tinggi berhasil digenerate! Pada HP, Anda juga bisa <strong>tekan lama gambar</strong> di bawah lalu pilih <strong>"Simpan ke Foto" / "Save Image"</strong>.
             </p>
             
             {/* Displayed Image */}
             <div className="w-full flex justify-center py-2 max-h-[50vh] overflow-y-auto">
               <img 
                 src={exportedImage} 
-                className="max-h-[45vh] w-auto rounded-xl shadow-xl border border-pink-200/80 object-contain"
+                className="max-h-[45vh] w-auto rounded-xl shadow-xl border border-pink-200/80 object-contain select-auto"
                 alt="Captured photostrip"
               />
             </div>
             
-            <div className="w-full flex gap-3 mt-2">
+            <div className="w-full flex flex-col gap-2.5 mt-2">
+              <div className="w-full flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => handleShare(exportedImage)}
+                  className="flex-1 py-3.5 px-4 bg-gradient-to-r from-pink-500 via-rose-400 to-purple-500 text-white rounded-full text-xs font-bold text-center shadow-lg shadow-pink-300/50 hover:shadow-xl transition-all cursor-pointer hover:scale-102 flex items-center justify-center gap-1.5"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-white" />
+                  <span>Simpan ke Galeri / Bagikan 📱</span>
+                </button>
+                <button
+                  onClick={() => triggerDownload(exportedImage)}
+                  className="flex-1 py-3.5 px-4 bg-white border-2 border-pink-300 hover:bg-pink-50 text-pink-900 rounded-full text-xs font-bold text-center shadow-sm transition-all cursor-pointer hover:scale-102 flex items-center justify-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5 text-pink-600" />
+                  <span>Unduh File PNG 💾</span>
+                </button>
+              </div>
               <button
                 onClick={() => setExportedImage(null)}
-                className="flex-1 py-3.5 bg-pink-100/80 border border-pink-200 rounded-full text-xs font-bold text-pink-900 hover:bg-pink-200/80 transition-all cursor-pointer"
+                className="w-full py-2.5 bg-pink-100/80 border border-pink-200 rounded-full text-xs font-bold text-pink-900 hover:bg-pink-200/80 transition-all cursor-pointer"
               >
                 Tutup / Close
-              </button>
-              <button
-                onClick={() => triggerDownload(exportedImage)}
-                className="flex-1 py-3.5 bg-gradient-to-r from-pink-400 via-rose-400 to-purple-400 text-white rounded-full text-xs font-bold text-center shadow-lg shadow-pink-300/50 hover:shadow-xl transition-all cursor-pointer hover:scale-102 flex items-center justify-center gap-1.5"
-              >
-                <Download className="w-3.5 h-3.5 text-white" />
-                <span>Unduh PNG Lagi 🌸</span>
               </button>
             </div>
             

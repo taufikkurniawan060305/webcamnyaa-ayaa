@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, RefreshCw, AlertCircle, ArrowRight, Sparkles, Heart } from 'lucide-react';
+import { Camera, RefreshCw, AlertCircle, ArrowRight, Sparkles, Heart, Upload } from 'lucide-react';
 
 export default function CaptureScreen({ onPhotosCaptured, onBack }) {
   const [stream, setStream] = useState(null);
@@ -15,6 +15,27 @@ export default function CaptureScreen({ onPhotosCaptured, onBack }) {
   const videoRef = useRef(null);
   const captureIntervalRef = useRef(null);
   const isFirstLoadRef = useRef(true);
+  const fileInputRef = useRef(null);
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files || files.length === 0) return;
+
+    const readPromises = files.slice(0, 4).map(file => {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = ev => resolve(ev.target.result);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readPromises).then(loadedPhotos => {
+      while (loadedPhotos.length < 4) {
+        loadedPhotos.push(loadedPhotos[loadedPhotos.length - 1] || loadedPhotos[0]);
+      }
+      onPhotosCaptured(loadedPhotos);
+    });
+  };
 
   // Bind camera stream to the video element once it is rendered in the DOM
   useEffect(() => {
@@ -29,12 +50,14 @@ export default function CaptureScreen({ onPhotosCaptured, onBack }) {
 
     async function initCamera() {
       try {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const videoConstraints = isMobile 
+          ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { width: { ideal: 1280 }, height: { ideal: 720 } };
+
         // Step 1: Request permission using standard video constraints to trigger dialog
         const initialStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
+          video: videoConstraints 
         });
         
         activeStream = initialStream;
@@ -156,10 +179,14 @@ export default function CaptureScreen({ onPhotosCaptured, onBack }) {
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
     
-    // Use high resolution for clean prints
-    // 4:3 aspect ratio crop from center of video stream
-    const videoWidth = video.videoWidth;
-    const videoHeight = video.videoHeight;
+    // Ensure dimensions are valid especially on mobile devices
+    let videoWidth = video.videoWidth;
+    let videoHeight = video.videoHeight;
+    
+    if (!videoWidth || !videoHeight) {
+      videoWidth = video.clientWidth || 1280;
+      videoHeight = video.clientHeight || 720;
+    }
     
     // Calculate 4:3 box dimensions
     let cropWidth, cropHeight;
@@ -183,11 +210,16 @@ export default function CaptureScreen({ onPhotosCaptured, onBack }) {
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     
-    ctx.drawImage(
-      video,
-      startX, startY, cropWidth, cropHeight, // source video
-      0, 0, canvas.width, canvas.height       // destination canvas
-    );
+    try {
+      ctx.drawImage(
+        video,
+        startX, startY, cropWidth, cropHeight, // source video
+        0, 0, canvas.width, canvas.height       // destination canvas
+      );
+    } catch (drawErr) {
+      console.warn("drawImage fallback:", drawErr);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
     
     const dataUrl = canvas.toDataURL('image/png');
     capturedList.push(dataUrl);
@@ -383,6 +415,24 @@ export default function CaptureScreen({ onPhotosCaptured, onBack }) {
             <p className="text-xs text-pink-900/65 font-medium text-center">
               4 jepretan otomatis dengan hitungan 3 detik. Siapkan pose terbaikmu! ✨
             </p>
+
+            {/* Mobile / Alternative Gallery Upload */}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*" 
+              multiple 
+              onChange={handleFileSelect} 
+              className="hidden" 
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-1 text-xs font-semibold text-pink-800 hover:text-pink-950 bg-white/90 hover:bg-white border border-pink-300/80 px-4 py-2 rounded-full flex items-center gap-1.5 transition-all shadow-xs cursor-pointer hover:scale-102"
+            >
+              <Upload className="w-3.5 h-3.5 text-pink-500" />
+              <span>Atau Pilih 4 Foto dari Galeri HP 📁</span>
+            </button>
           </div>
         </div>
 
