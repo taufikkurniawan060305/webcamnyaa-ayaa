@@ -1,6 +1,6 @@
-# Miniphotobox Cipa ❤️
+# Miniphotobox Aya 🌸
 
-A web-based photobooth application designed for both desktop and mobile. Take 4 photos, choose aesthetic frame layouts (including a Red Bull Racing F1 theme!), customize colors, filters, text, and export in high-resolution!
+A web-based photobooth application designed for both desktop and mobile. Take 4 photos, choose aesthetic pastel frame layouts designed for a calm girl aesthetic (Sakura Blossom, Matcha & Sage, Coquette Soft Ribbon, Lavender Dream, Baby Blue Serenity, Cozy Vanilla Cafe, and Strawberry Milk), customize colors, filters, text, and export in high-resolution!
 
 ---
 

@@ -1,31 +1,49 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", sans-serif;
   --font-serif: "Playfair Display", serif;
+  --font-cute: "Quicksand", sans-serif;
+  --font-hand: "Caveat", cursive;
 }
 
 body {
-  background-color: #121212;
-  color: #f3f4f6;
-  font-family: "Inter", sans-serif;
+  background-color: #FFF5F8;
+  color: #3b1836;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
 @utility glass {
-  background: rgba(26, 26, 26, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 200, 225, 0.45);
+  box-shadow: 0 10px 30px -10px rgba(244, 114, 182, 0.15);
+}
+
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 215, 232, 0.65);
+  box-shadow: 0 20px 40px -12px rgba(244, 114, 182, 0.2);
+}
+
+@utility glass-pastel {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(251, 207, 232, 0.4);
 }
 
 @utility glass-light {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 220, 235, 0.5);
 }
 
 @utility no-scrollbar {
