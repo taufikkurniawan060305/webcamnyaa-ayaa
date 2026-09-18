@@ -41,6 +41,10 @@ export default function CaptureScreen({ onPhotosCaptured, onBack }) {
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
+      videoRef.current.onloadedmetadata = () => {
+        videoRef.current?.play().catch(e => console.warn("Video play exception:", e));
+      };
+      videoRef.current?.play().catch(() => {});
     }
   }, [stream]);
 
@@ -49,6 +53,11 @@ export default function CaptureScreen({ onPhotosCaptured, onBack }) {
     let activeStream = null;
 
     async function initCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError("Kamera tidak dapat diakses langsung via HTTP pada browser HP. Silakan gunakan tombol 'Pilih 4 Foto dari Galeri HP' di bawah.");
+        return;
+      }
+
       try {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const videoConstraints = isMobile 

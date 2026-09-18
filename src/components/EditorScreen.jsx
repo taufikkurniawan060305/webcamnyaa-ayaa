@@ -763,7 +763,7 @@ export default function EditorScreen({ photos, onRetake }) {
                           <img
                             src={src}
                             alt={`Frame ${index + 1}`}
-                            className="w-full h-full object-cover scale-x-[-1] rounded-[4px]"
+                            className="w-full h-full object-cover rounded-[4px]"
                             style={{ filter: selectedFilter.style }}
                           />
                         </div>
@@ -826,7 +826,7 @@ export default function EditorScreen({ photos, onRetake }) {
                           <img
                             src={src}
                             alt={`Frame ${index + 1}`}
-                            className="w-full h-full object-cover scale-x-[-1] rounded-[4px]"
+                            className="w-full h-full object-cover rounded-[4px]"
                             style={{ filter: selectedFilter.style }}
                           />
                         </div>
